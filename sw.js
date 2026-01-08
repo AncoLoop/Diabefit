@@ -1,10 +1,11 @@
-const CACHE_NAME = 'fitflow-v1';
+const CACHE_NAME = 'diabefit-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/Diabefit/',
+  '/Diabefit/index.html',
+  '/Diabefit/app.js',
+  '/Diabefit/manifest.json',
+  '/Diabefit/icon-192.png',
+  '/Diabefit/icon-512.png'
 ];
 
 // Install service worker
