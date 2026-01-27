@@ -37,6 +37,43 @@ let state = {
     glucoseTime: null,
     glucoseTrend: 'stable',
     
+    // Nightscout
+    nightscout: {
+        url: '',
+        secret: '',
+        connected: false,
+        lastSync: null
+    },
+    
+    // Glucose history from Nightscout (for analysis)
+    glucoseHistory: [], // { time, value } - last 14 days
+    
+    // Basaal profielen
+    basalProfiles: {
+        normal: [
+            { start: '00:00', end: '03:00', rate: 0.8 },
+            { start: '03:00', end: '06:00', rate: 1.0 },
+            { start: '06:00', end: '09:00', rate: 1.2 },
+            { start: '09:00', end: '12:00', rate: 0.9 },
+            { start: '12:00', end: '18:00', rate: 0.8 },
+            { start: '18:00', end: '21:00', rate: 0.9 },
+            { start: '21:00', end: '00:00', rate: 0.8 }
+        ],
+        training: [
+            { start: '00:00', end: '06:00', rate: 0.6 },
+            { start: '06:00', end: '18:00', rate: 0.8 },
+            { start: '18:00', end: '22:00', rate: 0.7 },
+            { start: '22:00', end: '00:00', rate: 0.6 }
+        ],
+        weekend: [
+            { start: '00:00', end: '08:00', rate: 0.8 },
+            { start: '08:00', end: '12:00', rate: 1.0 },
+            { start: '12:00', end: '22:00', rate: 0.8 },
+            { start: '22:00', end: '00:00', rate: 0.8 }
+        ]
+    },
+    activeBasalProfile: 'normal',
+    
     settings: {
         targetGlucose: 7.5,
         insulinDuration: 4,
@@ -445,6 +482,14 @@ function renderAll() {
     renderAchievements();
     renderPatterns();
     loadSettings();
+    updateNightscoutStatus();
+    renderBasalSummary();
+    
+    // Auto-start Nightscout sync if connected
+    if (state.nightscout?.connected) {
+        startNightscoutSync();
+        syncNightscout(); // Immediate sync on load
+    }
 }
 
 function renderTodayTraining() {
@@ -605,7 +650,14 @@ function loadSettings() {
     document.getElementById('togglePostWorkout').classList.toggle('active', state.settings.notifications.postWorkout);
     document.getElementById('toggleNightCheck').classList.toggle('active', state.settings.notifications.nightCheck);
     
-    updateDexcomStatus();
+    // Nightscout
+    if (state.nightscout?.url) document.getElementById('nightscoutUrl').value = state.nightscout.url;
+    if (state.nightscout?.secret) document.getElementById('nightscoutSecret').value = state.nightscout.secret;
+    
+    // Basal profile
+    if (state.activeBasalProfile) document.getElementById('activeBasalProfile').value = state.activeBasalProfile;
+    
+    updateNightscoutStatus();
 }
 
 function saveSettings() {
@@ -675,13 +727,6 @@ function openSettings() {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 }
 
-function openModal(id) {
-    document.getElementById(id).classList.add('active');
-    if (id === 'carbCalcModal' && state.currentGlucose) {
-        document.getElementById('calcCurrentGlucose').value = state.currentGlucose;
-    }
-}
-
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
 function toggleCheck(el) {
@@ -701,6 +746,313 @@ function setupEventListeners() {
         m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
     });
     document.getElementById('glucoseInput').addEventListener('keypress', e => { if (e.key === 'Enter') updateGlucose(); });
+}
+
+// ==================== NIGHTSCOUT INTEGRATION ====================
+
+async function connectNightscout() {
+    const url = document.getElementById('nightscoutUrl').value.trim().replace(/\/$/, '');
+    const secret = document.getElementById('nightscoutSecret').value;
+    
+    if (!url) { showToast('Voer je Nightscout URL in'); return; }
+    
+    showToast('Verbinding testen...');
+    
+    try {
+        const response = await fetch(`${url}/api/v1/entries/current.json`);
+        if (!response.ok) throw new Error('Verbinding mislukt');
+        
+        const data = await response.json();
+        if (data && data.length > 0) {
+            state.nightscout = { url, secret, connected: true, lastSync: new Date().toISOString() };
+            
+            const entry = data[0];
+            state.currentGlucose = Math.round(entry.sgv / 18 * 10) / 10;
+            state.glucoseTime = new Date(entry.dateString).toISOString();
+            
+            const trendMap = { 'DoubleUp': 'rising', 'SingleUp': 'rising', 'FortyFiveUp': 'rising', 'Flat': 'stable', 'FortyFiveDown': 'falling', 'SingleDown': 'falling', 'DoubleDown': 'falling' };
+            state.glucoseTrend = trendMap[entry.direction] || 'stable';
+            
+            saveState();
+            updateNightscoutStatus();
+            renderGlucoseDisplay();
+            updateReadiness();
+            startNightscoutSync();
+            fetchGlucoseHistory();
+            showToast('Nightscout verbonden! ✓');
+        }
+    } catch (error) {
+        console.error('Nightscout error:', error);
+        showToast('Verbinding mislukt. Check je URL.');
+    }
+}
+
+function updateNightscoutStatus() {
+    const dot = document.getElementById('nightscoutStatus');
+    const text = document.getElementById('nightscoutStatusText');
+    if (!dot || !text) return;
+    
+    if (state.nightscout?.connected) {
+        dot.className = 'status-dot connected';
+        const mins = state.nightscout.lastSync ? Math.round((new Date() - new Date(state.nightscout.lastSync)) / 60000) : 0;
+        text.textContent = `Verbonden (${mins} min geleden)`;
+    } else {
+        dot.className = 'status-dot disconnected';
+        text.textContent = 'Niet verbonden';
+    }
+}
+
+let nightscoutInterval = null;
+function startNightscoutSync() {
+    if (nightscoutInterval) clearInterval(nightscoutInterval);
+    nightscoutInterval = setInterval(syncNightscout, 5 * 60 * 1000);
+    console.log('Nightscout sync gestart (elke 5 min)');
+}
+
+async function syncNightscout() {
+    if (!state.nightscout?.connected || !state.nightscout?.url) return;
+    
+    try {
+        const response = await fetch(`${state.nightscout.url}/api/v1/entries/current.json`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data && data.length > 0) {
+            const entry = data[0];
+            const newGlucose = Math.round(entry.sgv / 18 * 10) / 10;
+            
+            if (state.currentGlucose !== null) {
+                const diff = newGlucose - state.currentGlucose;
+                state.glucoseTrend = diff > 0.3 ? 'rising' : diff < -0.3 ? 'falling' : 'stable';
+            }
+            
+            const trendMap = { 'DoubleUp': 'rising', 'SingleUp': 'rising', 'FortyFiveUp': 'rising', 'Flat': 'stable', 'FortyFiveDown': 'falling', 'SingleDown': 'falling', 'DoubleDown': 'falling' };
+            if (entry.direction) state.glucoseTrend = trendMap[entry.direction] || state.glucoseTrend;
+            
+            state.currentGlucose = newGlucose;
+            state.glucoseTime = new Date(entry.dateString).toISOString();
+            state.nightscout.lastSync = new Date().toISOString();
+            
+            saveState();
+            renderGlucoseDisplay();
+            updateReadiness();
+            updateNightscoutStatus();
+            console.log(`Nightscout sync: ${newGlucose} mmol/L`);
+        }
+    } catch (e) { console.error('Sync error:', e); }
+}
+
+async function fetchGlucoseHistory() {
+    if (!state.nightscout?.connected || !state.nightscout?.url) return;
+    
+    try {
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        
+        const response = await fetch(`${state.nightscout.url}/api/v1/entries.json?find[dateString][$gte]=${twoWeeksAgo.toISOString()}&count=4000`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        state.glucoseHistory = data.map(e => ({ time: new Date(e.dateString).toISOString(), value: Math.round(e.sgv / 18 * 10) / 10 }));
+        saveState();
+        console.log(`Loaded ${state.glucoseHistory.length} readings`);
+    } catch (e) { console.error('History error:', e); }
+}
+
+// ==================== BASAL PROFILE MANAGEMENT ====================
+
+function switchBasalProfile() {
+    state.activeBasalProfile = document.getElementById('activeBasalProfile').value;
+    saveState();
+    renderBasalSummary();
+    showToast(`Profiel: ${state.activeBasalProfile}`);
+}
+
+function renderBasalSummary() {
+    const container = document.getElementById('basalProfileEditor');
+    if (!container) return;
+    
+    const profile = state.basalProfiles[state.activeBasalProfile];
+    const total = profile.reduce((sum, b) => {
+        const hours = getHoursDiff(b.start, b.end);
+        return sum + (b.rate * hours);
+    }, 0);
+    
+    container.innerHTML = `<div style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-secondary);border-radius:10px;margin-top:12px;">
+        <span style="color:var(--text-secondary)">Totaal dagelijks</span>
+        <span style="font-family:var(--font-mono);color:var(--accent)">${total.toFixed(1)} E/24u</span>
+    </div>`;
+}
+
+function getHoursDiff(start, end) {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let diff = (eh + em/60) - (sh + sm/60);
+    return diff <= 0 ? diff + 24 : diff;
+}
+
+function loadBasalProfileForEdit() {
+    const name = document.getElementById('editBasalProfile').value;
+    const profile = state.basalProfiles[name];
+    document.getElementById('basalTimeBlocks').innerHTML = profile.map((b, i) => `
+        <div style="display:flex;gap:8px;align-items:center;padding:12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:8px;">
+            <input type="time" class="form-input" value="${b.start}" style="flex:1" id="basalStart${i}">
+            <span style="color:var(--text-muted)">→</span>
+            <input type="time" class="form-input" value="${b.end}" style="flex:1" id="basalEnd${i}">
+            <input type="number" class="form-input" value="${b.rate}" step="0.05" style="width:80px" id="basalRate${i}">
+            <span style="color:var(--text-muted)">E/u</span>
+        </div>
+    `).join('');
+}
+
+function saveBasalProfile() {
+    const name = document.getElementById('editBasalProfile').value;
+    state.basalProfiles[name].forEach((b, i) => {
+        b.start = document.getElementById(`basalStart${i}`).value;
+        b.end = document.getElementById(`basalEnd${i}`).value;
+        b.rate = parseFloat(document.getElementById(`basalRate${i}`).value);
+    });
+    saveState();
+    renderBasalSummary();
+    closeModal('basalEditorModal');
+    showToast('Profiel opgeslagen ✓');
+}
+
+// ==================== BASAL ANALYSIS ====================
+
+function analyzeBasalPatterns() {
+    if (!state.glucoseHistory || state.glucoseHistory.length < 500) {
+        return { hasEnoughData: false, suggestions: [] };
+    }
+    
+    const hourlyData = Array.from({ length: 24 }, () => []);
+    state.glucoseHistory.forEach(e => {
+        const h = new Date(e.time).getHours();
+        hourlyData[h].push(e.value);
+    });
+    
+    const hourlyAnalysis = hourlyData.map((values, hour) => {
+        if (values.length === 0) return { hour, avg: 7, high: 0, low: 0 };
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        return { hour, avg, high: values.filter(v => v > 10).length / values.length, low: values.filter(v => v < 4).length / values.length };
+    });
+    
+    const suggestions = [];
+    const target = state.settings.targetGlucose;
+    
+    // Find high periods
+    for (let h = 0; h < 24; h++) {
+        const data = hourlyAnalysis[h];
+        if (data.avg > target + 2 && data.high > 0.25) {
+            suggestions.push({
+                type: 'increase', icon: '📈',
+                period: `${String(h).padStart(2, '0')}:00 - ${String((h + 3) % 24).padStart(2, '0')}:00`,
+                reason: `Glucose gem. ${data.avg.toFixed(1)} mmol/L (${Math.round(data.high * 100)}% te hoog)`,
+                suggestion: 'Verhoog basaal met 10-15%'
+            });
+            h += 2;
+        }
+    }
+    
+    // Find low periods
+    for (let h = 0; h < 24; h++) {
+        const data = hourlyAnalysis[h];
+        if (data.avg < target - 1.5 && data.low > 0.1) {
+            suggestions.push({
+                type: 'decrease', icon: '📉',
+                period: `${String(h).padStart(2, '0')}:00 - ${String((h + 3) % 24).padStart(2, '0')}:00`,
+                reason: `Glucose gem. ${data.avg.toFixed(1)} mmol/L (${Math.round(data.low * 100)}% hypo's)`,
+                suggestion: 'Verlaag basaal met 10-15%'
+            });
+            h += 2;
+        }
+    }
+    
+    // Dawn phenomenon
+    const morning = hourlyAnalysis.filter(h => h.hour >= 4 && h.hour <= 8);
+    if (morning.length > 1) {
+        const rise = morning[morning.length - 1].avg - morning[0].avg;
+        if (rise > 2) {
+            suggestions.push({
+                type: 'dawn', icon: '🌅',
+                period: '04:00 - 08:00',
+                reason: `Ochtendstijging van ${rise.toFixed(1)} mmol/L`,
+                suggestion: 'Start basaalverhoging vanaf 02:00-03:00'
+            });
+        }
+    }
+    
+    // Training effect
+    const recentWorkouts = state.workoutLogs.filter(w => new Date() - new Date(w.date) < 14 * 24 * 60 * 60 * 1000);
+    if (recentWorkouts.length >= 3) {
+        const hypoRate = recentWorkouts.filter(w => w.hypo).length / recentWorkouts.length;
+        if (hypoRate > 0.25) {
+            suggestions.push({
+                type: 'training', icon: '🏃',
+                period: 'Na training (22:00 - 06:00)',
+                reason: `${Math.round(hypoRate * 100)}% nachtelijke hypo's na training`,
+                suggestion: 'Gebruik "Trainingsdag" profiel met 20% lagere basaal'
+            });
+        }
+    }
+    
+    return { hasEnoughData: true, hourlyAnalysis, suggestions, daysAnalyzed: Math.round(state.glucoseHistory.length / 288) };
+}
+
+function renderBasalAnalysis() {
+    const analysis = analyzeBasalPatterns();
+    const container = document.getElementById('basalAnalysisResults');
+    const dot = document.getElementById('analysisDataStatus');
+    const text = document.getElementById('analysisDataText');
+    
+    if (!analysis.hasEnoughData) {
+        dot.className = 'status-dot disconnected';
+        text.textContent = `Te weinig data (${state.glucoseHistory?.length || 0} metingen)`;
+        container.innerHTML = '<p style="color:var(--text-secondary);font-size:14px;">Verbind Nightscout en wacht een week voor analyse.</p>';
+        renderGlucosePatternChart([]);
+        return;
+    }
+    
+    dot.className = 'status-dot connected';
+    text.textContent = `Analyse van ${analysis.daysAnalyzed} dagen`;
+    
+    container.innerHTML = analysis.suggestions.length === 0
+        ? '<div class="advice-box success"><div class="advice-title">✅ Basaal ziet er goed uit!</div><div class="advice-text">Geen grote problemen gevonden.</div></div>'
+        : analysis.suggestions.map(s => `
+            <div class="advice-box ${s.type === 'increase' || s.type === 'dawn' ? 'danger' : 'warning'}" style="margin-bottom:12px;">
+                <div class="advice-title">${s.icon} ${s.period}</div>
+                <div class="advice-text"><strong>Probleem:</strong> ${s.reason}<br><strong>Suggestie:</strong> ${s.suggestion}</div>
+            </div>
+        `).join('');
+    
+    renderGlucosePatternChart(analysis.hourlyAnalysis);
+}
+
+function renderGlucosePatternChart(hourlyData) {
+    const container = document.getElementById('glucosePatternChart');
+    if (!container) return;
+    
+    if (!hourlyData || hourlyData.length === 0) {
+        container.innerHTML = '<span style="color:var(--text-muted);margin:auto;">Geen data</span>';
+        return;
+    }
+    
+    const max = Math.max(...hourlyData.map(h => h.avg), 12);
+    const min = Math.min(...hourlyData.map(h => h.avg), 3);
+    const range = max - min || 1;
+    
+    container.innerHTML = hourlyData.map(h => {
+        const height = ((h.avg - min) / range) * 100;
+        const color = h.avg < 4 ? 'var(--danger)' : h.avg > 10 ? 'var(--warning)' : 'var(--accent)';
+        return `<div style="flex:1;background:${color};height:${height}%;border-radius:2px;opacity:0.8" title="${h.hour}:00 - ${h.avg.toFixed(1)}"></div>`;
+    }).join('');
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    if (id === 'carbCalcModal' && state.currentGlucose) document.getElementById('calcCurrentGlucose').value = state.currentGlucose;
+    if (id === 'basalEditorModal') loadBasalProfileForEdit();
+    if (id === 'basalAnalysisModal') renderBasalAnalysis();
 }
 
 // ==================== SERVICE WORKER ====================

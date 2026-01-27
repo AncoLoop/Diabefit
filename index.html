@@ -1201,22 +1201,48 @@
         <div class="page" id="page-settings">
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">Dexcom Koppeling</span>
+                    <span class="card-title">Nightscout Koppeling</span>
                     <span class="card-icon">📡</span>
                 </div>
                 <div class="connection-status">
-                    <div class="status-dot disconnected" id="dexcomStatus"></div>
-                    <span class="connection-text" id="dexcomStatusText">Niet verbonden</span>
+                    <div class="status-dot disconnected" id="nightscoutStatus"></div>
+                    <span class="connection-text" id="nightscoutStatusText">Niet verbonden</span>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Dexcom Gebruikersnaam</label>
-                    <input type="text" class="form-input" id="dexcomUsername" placeholder="Gebruikersnaam...">
+                    <label class="form-label">Nightscout URL</label>
+                    <input type="url" class="form-input" id="nightscoutUrl" placeholder="https://jouw-naam.nightscout.io">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Dexcom Wachtwoord</label>
-                    <input type="password" class="form-input" id="dexcomPassword" placeholder="Wachtwoord...">
+                    <label class="form-label">API Secret (optioneel)</label>
+                    <input type="password" class="form-input" id="nightscoutSecret" placeholder="Alleen als je site beveiligd is">
                 </div>
-                <button class="btn btn-primary" onclick="connectDexcom()">Verbinden</button>
+                <button class="btn btn-primary" onclick="connectNightscout()">Verbinden & Testen</button>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px;">
+                    💡 Na verbinding haalt de app elke 5 minuten je glucose op
+                </p>
+            </div>
+            
+            <!-- Basaal Profiel -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Basaal Profiel</span>
+                    <span class="card-icon">⏱️</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Actief profiel</label>
+                    <select class="form-input" id="activeBasalProfile" onchange="switchBasalProfile()">
+                        <option value="normal">Normaal (werkdag)</option>
+                        <option value="training">Trainingsdag</option>
+                        <option value="weekend">Weekend</option>
+                    </select>
+                </div>
+                <div id="basalProfileEditor">
+                    <!-- Filled by JS -->
+                </div>
+                <div class="form-row" style="margin-top: 16px;">
+                    <button class="btn btn-secondary" onclick="openModal('basalEditorModal')">Profiel Bewerken</button>
+                    <button class="btn btn-primary" onclick="openModal('basalAnalysisModal')">📊 Analyseer</button>
+                </div>
             </div>
 
             <div class="card">
@@ -1454,6 +1480,60 @@
             </div>
 
             <button class="btn btn-secondary" style="margin-top: 16px;" onclick="closeModal('carbCalcModal')">Sluiten</button>
+        </div>
+    </div>
+
+    <!-- Basaal Editor Modal -->
+    <div class="modal-overlay" id="basalEditorModal">
+        <div class="modal" style="max-height: 85vh;">
+            <div class="modal-handle"></div>
+            <h3 class="modal-title">⏱️ Basaal Profiel Bewerken</h3>
+            
+            <div class="form-group">
+                <label class="form-label">Profiel</label>
+                <select class="form-input" id="editBasalProfile" onchange="loadBasalProfileForEdit()">
+                    <option value="normal">Normaal (werkdag)</option>
+                    <option value="training">Trainingsdag</option>
+                    <option value="weekend">Weekend</option>
+                </select>
+            </div>
+            
+            <div class="section-title">Basaalstanden per tijdsblok</div>
+            <div id="basalTimeBlocks" style="max-height: 300px; overflow-y: auto;">
+                <!-- Filled by JS -->
+            </div>
+            
+            <div class="form-row" style="margin-top: 16px;">
+                <button class="btn btn-secondary" onclick="closeModal('basalEditorModal')">Annuleren</button>
+                <button class="btn btn-primary" onclick="saveBasalProfile()">Opslaan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Basaal Analysis Modal -->
+    <div class="modal-overlay" id="basalAnalysisModal">
+        <div class="modal" style="max-height: 90vh;">
+            <div class="modal-handle"></div>
+            <h3 class="modal-title">📊 Basaal Analyse</h3>
+            
+            <div class="connection-status" style="margin-bottom: 16px;">
+                <div class="status-dot" id="analysisDataStatus"></div>
+                <span class="connection-text" id="analysisDataText">Analyseer minimaal 7 dagen data</span>
+            </div>
+            
+            <div id="basalAnalysisResults">
+                <!-- Filled by JS -->
+            </div>
+            
+            <div class="section-title" style="margin-top: 20px;">Glucose Patroon (24 uur)</div>
+            <div id="glucosePatternChart" style="height: 150px; background: var(--bg-secondary); border-radius: 12px; display: flex; align-items: flex-end; padding: 16px; gap: 2px;">
+                <!-- Filled by JS -->
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; padding: 0 16px;">
+                <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+            </div>
+            
+            <button class="btn btn-secondary" style="margin-top: 20px;" onclick="closeModal('basalAnalysisModal')">Sluiten</button>
         </div>
     </div>
 
