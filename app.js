@@ -1,579 +1,716 @@
-// DiabeFit - Training App voor Type 1 Diabetes
-// =============================================
+// DiabeFit Pro - Complete Diabetes Sport Management
+// ==================================================
 
-// Training Schedule Data
+// ==================== DATA STRUCTURES ====================
+
 const trainingSchedule = {
-    0: { // Zondag
-        type: 'rest',
-        title: 'Rustdag',
-        description: 'Vandaag geen training gepland. Geniet van je vrije dag en herstel goed.',
-        duration: 0,
-        icon: '😴',
-        exercises: []
-    },
-    1: { // Maandag
-        type: 'cycling',
-        title: 'Zone 2 Herstelrit',
-        description: 'Rustige duurrit in Zone 2. Focus op een ontspannen tempo waarbij je nog kunt praten. Gebruik Zwift "Foundation" of een vlakke route.',
-        duration: 45,
-        icon: '🚴',
-        intensity: 'Laag',
-        zone: 'Zone 2 (60-70% max HR)',
-        exercises: []
-    },
-    2: { // Dinsdag
-        type: 'strength',
-        title: 'Krachttraining',
-        description: 'Full-body circuit training. Focus op goede techniek en gecontroleerde bewegingen. 3 rondes met 60 seconden rust tussen rondes.',
-        duration: 30,
-        icon: '💪',
-        intensity: 'Gemiddeld',
-        exercises: [
-            { name: 'Squats', reps: '15x' },
-            { name: 'Push-ups', reps: '10-15x' },
-            { name: 'Lunges', reps: '10x per been' },
-            { name: 'Plank', reps: '30-45 sec' },
-            { name: 'Glute bridges', reps: '15x' },
-            { name: 'Superman (rug)', reps: '12x' }
-        ]
-    },
-    3: { // Woensdag
-        type: 'cycling',
-        title: 'Interval Training',
-        description: '4x4 minuten op 85-90% van je max hartslag met 3 minuten actief herstel. Zoek in Zwift naar "FTP Builder" of "Build Me Up" workouts.',
-        duration: 50,
-        icon: '🚴',
-        intensity: 'Hoog',
-        zone: 'Zone 4-5 (85-90% max HR)',
-        exercises: []
-    },
-    4: { // Donderdag
-        type: 'strength',
-        title: 'Krachttraining',
-        description: 'Full-body circuit training. Focus op goede techniek en gecontroleerde bewegingen. 3 rondes met 60 seconden rust tussen rondes.',
-        duration: 30,
-        icon: '💪',
-        intensity: 'Gemiddeld',
-        exercises: [
-            { name: 'Squats', reps: '15x' },
-            { name: 'Push-ups', reps: '10-15x' },
-            { name: 'Lunges', reps: '10x per been' },
-            { name: 'Plank', reps: '30-45 sec' },
-            { name: 'Glute bridges', reps: '15x' },
-            { name: 'Superman (rug)', reps: '12x' }
-        ]
-    },
-    5: { // Vrijdag
-        type: 'rest',
-        title: 'Rust of Mobiliteit',
-        description: 'Optioneel: 15 minuten lichte stretching of yoga. Luister naar je lichaam.',
-        duration: 15,
-        icon: '🧘',
-        exercises: []
-    },
-    6: { // Zaterdag
-        type: 'cycling',
-        title: 'Lange Duurrit',
-        description: 'Langere rit op gemiddeld tempo. Probeer een Zwift groepsrit of een route met wat klimwerk. Neem voldoende koolhydraten mee!',
-        duration: 75,
-        icon: '🚴',
-        intensity: 'Gemiddeld',
-        zone: 'Zone 2-3 (65-80% max HR)',
-        exercises: []
-    }
+    0: { type: 'rest', title: 'Rustdag', description: 'Geen training. Herstel is belangrijk!', duration: 0, icon: '😴', intensity: 'none' },
+    1: { type: 'cycling', title: 'Zone 2 Herstelrit', description: 'Rustige duurrit in Zone 2 op Zwift. Focus op ontspannen tempo.', duration: 45, icon: '🚴', intensity: 'low', zone: 'Zone 2 (60-70% HR)', route: 'Tempus Fugit of Tick Tock' },
+    2: { type: 'strength', title: 'Krachttraining', description: 'Full-body circuit. 3 rondes met 60 sec rust.', duration: 30, icon: '💪', intensity: 'medium', exercises: [
+        { name: 'Squats', reps: '15x' },
+        { name: 'Push-ups', reps: '10-15x' },
+        { name: 'Lunges', reps: '10x per been' },
+        { name: 'Plank', reps: '30-45 sec' },
+        { name: 'Glute bridges', reps: '15x' },
+        { name: 'Superman', reps: '12x' }
+    ]},
+    3: { type: 'cycling', title: 'Interval Training', description: '4x4 min op 85-90% max HR, 3 min herstel. Hoog intensief!', duration: 50, icon: '🚴', intensity: 'high', zone: 'Zone 4-5 (85-90% HR)', route: 'Volcano Flat of Crit City' },
+    4: { type: 'strength', title: 'Krachttraining', description: 'Full-body circuit. 3 rondes met 60 sec rust.', duration: 30, icon: '💪', intensity: 'medium', exercises: [
+        { name: 'Squats', reps: '15x' },
+        { name: 'Push-ups', reps: '10-15x' },
+        { name: 'Lunges', reps: '10x per been' },
+        { name: 'Plank', reps: '30-45 sec' },
+        { name: 'Glute bridges', reps: '15x' },
+        { name: 'Superman', reps: '12x' }
+    ]},
+    5: { type: 'rest', title: 'Rust of Mobiliteit', description: 'Optioneel: 15 min stretching of yoga.', duration: 15, icon: '🧘', intensity: 'none' },
+    6: { type: 'cycling', title: 'Lange Duurrit', description: 'Langere rit op gemiddeld tempo. Groepsrit of route met klimwerk.', duration: 75, icon: '🚴', intensity: 'medium', zone: 'Zone 2-3 (65-80% HR)', route: 'Pretzel of Mountain Route' }
 };
 
-// Day names in Dutch
 const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
 const dayNamesFull = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
 
-// App State
+// ==================== APP STATE ====================
+
 let state = {
     currentGlucose: null,
     glucoseTime: null,
+    glucoseTrend: 'stable',
+    
+    settings: {
+        targetGlucose: 7.5,
+        insulinDuration: 4,
+        correctionFactor: 2.5,
+        carbRatio: 10,
+        kidsBedtime: '19:30',
+        workoutTime: '20:00',
+        notifications: { reminders: true, postWorkout: true, nightCheck: false }
+    },
+    
+    insulinLogs: [],
+    carbLogs: [],
+    mealLogs: [],
+    glucoseLogs: [],
+    workoutLogs: [],
+    wellbeingLogs: [],
+    
+    achievements: {
+        firstWorkout: false,
+        fiveWorkouts: false,
+        tenWorkouts: false,
+        noHypoStreak: 0,
+        consistentWeek: false
+    },
+    
     selectedDay: new Date().getDay(),
-    notificationsEnabled: true,
-    rescheduledTrainings: {}, // { originalDay: newDay }
-    completedTrainings: []
+    activeWorkout: null,
+    dexcomConnected: false
 };
 
-// Load state from localStorage
+// ==================== INITIALIZATION ====================
+
+function init() {
+    loadState();
+    renderAll();
+    setupEventListeners();
+    startIOBTimer();
+}
+
 function loadState() {
-    const saved = localStorage.getItem('diabefit-state');
+    const saved = localStorage.getItem('diabefit-pro-state');
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            state = { ...state, ...parsed };
-        } catch (e) {
-            console.error('Failed to load state:', e);
-        }
+            state = { ...state, ...parsed, settings: { ...state.settings, ...parsed.settings } };
+        } catch (e) { console.error('Load error:', e); }
     }
 }
 
-// Save state to localStorage
 function saveState() {
-    localStorage.setItem('diabefit-state', JSON.stringify(state));
+    localStorage.setItem('diabefit-pro-state', JSON.stringify(state));
 }
 
-// Initialize the app
-function init() {
-    loadState();
-    renderDaySelector();
-    renderWeekGrid();
-    renderTrainingCard();
-    updateGlucoseDisplay();
-    setupEventListeners();
-    requestNotificationPermission();
-    scheduleNotifications();
-}
+// ==================== IOB CALCULATOR ====================
 
-// Render day selector
-function renderDaySelector() {
-    const container = document.getElementById('daySelector');
-    const today = new Date();
-    const currentDay = today.getDay();
+function calculateIOB() {
+    const now = new Date();
+    const durationMs = state.settings.insulinDuration * 60 * 60 * 1000;
+    let totalIOB = 0;
     
-    container.innerHTML = '';
-    
-    for (let i = 0; i < 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - currentDay + i);
-        
-        const dayNum = date.getDate();
-        const dayIndex = date.getDay();
-        const training = getTrainingForDay(dayIndex);
-        
-        const btn = document.createElement('button');
-        btn.className = 'day-btn';
-        if (dayIndex === state.selectedDay) btn.classList.add('active');
-        if (dayIndex === currentDay) btn.classList.add('today');
-        if (training.type === 'rest') btn.classList.add('rest');
-        
-        btn.innerHTML = `
-            <span class="day-name">${dayNames[dayIndex]}</span>
-            <span class="day-num">${dayNum}</span>
-        `;
-        
-        btn.addEventListener('click', () => {
-            state.selectedDay = dayIndex;
-            renderDaySelector();
-            renderTrainingCard();
-        });
-        
-        container.appendChild(btn);
-    }
-}
-
-// Render week grid
-function renderWeekGrid() {
-    const container = document.getElementById('weekGrid');
-    const today = new Date().getDay();
-    
-    container.innerHTML = '';
-    
-    for (let i = 0; i < 7; i++) {
-        const training = getTrainingForDay(i);
-        const day = document.createElement('div');
-        day.className = 'week-day';
-        if (i === today) day.classList.add('today');
-        
-        day.innerHTML = `
-            <div class="week-day-name">${dayNames[i]}</div>
-            <div class="week-day-icon">${training.icon}</div>
-            <div class="week-day-type">${training.type === 'cycling' ? 'Fiets' : training.type === 'strength' ? 'Kracht' : 'Rust'}</div>
-        `;
-        
-        container.appendChild(day);
-    }
-}
-
-// Get training for a specific day (considering rescheduled trainings)
-function getTrainingForDay(dayIndex) {
-    // Check if another training was moved to this day
-    for (const [original, target] of Object.entries(state.rescheduledTrainings)) {
-        if (parseInt(target) === dayIndex) {
-            return trainingSchedule[parseInt(original)];
+    state.insulinLogs.forEach(log => {
+        if (log.type !== 'bolus') return;
+        const elapsed = now - new Date(log.time);
+        if (elapsed < durationMs && elapsed > 0) {
+            totalIOB += log.amount * (1 - elapsed / durationMs);
         }
-    }
+    });
     
-    // Check if this day's training was moved elsewhere
-    if (state.rescheduledTrainings[dayIndex] !== undefined) {
-        return trainingSchedule[0]; // Return rest day
-    }
+    state.mealLogs.forEach(log => {
+        const elapsed = now - new Date(log.time);
+        if (elapsed < durationMs && elapsed > 0) {
+            totalIOB += log.insulin * (1 - elapsed / durationMs);
+        }
+    });
     
-    return trainingSchedule[dayIndex];
+    return Math.max(0, totalIOB);
 }
 
-// Render training card
-function renderTrainingCard() {
-    const container = document.getElementById('trainingCardContainer');
-    const training = getTrainingForDay(state.selectedDay);
-    const isToday = state.selectedDay === new Date().getDay();
+function calculateCOB() {
+    const now = new Date();
+    const absorptionTimes = { fast: 30*60*1000, medium: 90*60*1000, slow: 180*60*1000 };
+    let totalCOB = 0;
     
-    let exerciseListHTML = '';
-    if (training.exercises && training.exercises.length > 0) {
-        exerciseListHTML = `
-            <div class="exercise-list">
-                ${training.exercises.map(ex => `
-                    <div class="exercise-item">
-                        <span class="exercise-name">${ex.name}</span>
-                        <span class="exercise-reps">${ex.reps}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
+    state.carbLogs.forEach(log => {
+        const elapsed = now - new Date(log.time);
+        const absTime = absorptionTimes[log.type] || absorptionTimes.medium;
+        if (elapsed < absTime && elapsed > 0) {
+            totalCOB += log.amount * (1 - elapsed / absTime);
+        }
+    });
+    
+    state.mealLogs.forEach(log => {
+        const elapsed = now - new Date(log.time);
+        if (elapsed < absorptionTimes.slow && elapsed > 0) {
+            totalCOB += log.carbs * (1 - elapsed / absorptionTimes.slow);
+        }
+    });
+    
+    return Math.max(0, totalCOB);
+}
+
+function getTimeSinceLastBolus() {
+    const now = new Date();
+    let lastBolus = null;
+    
+    [...state.insulinLogs.filter(l => l.type === 'bolus'), ...state.mealLogs].forEach(log => {
+        const t = new Date(log.time);
+        if (!lastBolus || t > lastBolus) lastBolus = t;
+    });
+    
+    if (!lastBolus) return null;
+    const elapsed = now - lastBolus;
+    const hours = Math.floor(elapsed / 3600000);
+    const minutes = Math.floor((elapsed % 3600000) / 60000);
+    return hours > 0 ? `${hours}u ${minutes}m` : `${minutes}m`;
+}
+
+function startIOBTimer() {
+    updateIOBDisplay();
+    setInterval(updateIOBDisplay, 60000);
+}
+
+function updateIOBDisplay() {
+    document.getElementById('currentIOB').textContent = calculateIOB().toFixed(1);
+    document.getElementById('currentCOB').textContent = Math.round(calculateCOB());
+    document.getElementById('timeSinceInsulin').textContent = getTimeSinceLastBolus() || '--';
+    updateReadiness();
+}
+
+// ==================== TRAINING READINESS ====================
+
+function calculateReadiness() {
+    let score = 100;
+    let advice = '';
+    const glucose = state.currentGlucose;
+    const target = state.settings.targetGlucose;
+    const iob = calculateIOB();
+    
+    if (glucose === null) {
+        score -= 30;
+        advice = 'Meet eerst je bloedsuiker voordat je gaat trainen.';
+    } else if (glucose < 4) {
+        score = 0;
+        advice = `Je bloedsuiker is ${glucose} - NIET SPORTEN. Neem eerst 15-20g snelle koolhydraten.`;
+    } else if (glucose < 5) {
+        score -= 50;
+        advice = `Je bloedsuiker is ${glucose}. Neem 15-20g koolhydraten en wacht tot je boven ${target} zit.`;
+    } else if (glucose < 6.5) {
+        score -= 25;
+        advice = `Je bloedsuiker is ${glucose}. Neem 10-15g koolhydraten om dichter bij ${target} te komen.`;
+    } else if (glucose > 14) {
+        score -= 40;
+        advice = `Je bloedsuiker is ${glucose}. Meet eerst ketonen. Bij ketonen > 0.6: niet sporten.`;
+    } else if (glucose > 10) {
+        score -= 15;
     }
     
-    let metaHTML = '';
-    if (training.duration > 0) {
-        metaHTML = `
-            <div class="training-meta">
-                <div class="meta-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    <span>${training.duration} min</span>
-                </div>
-                ${training.intensity ? `
-                <div class="meta-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    <span>${training.intensity}</span>
-                </div>
-                ` : ''}
-            </div>
-        `;
+    if (iob > 1.5) {
+        score -= 30;
+        if (!advice) advice = `Je hebt nog ${iob.toFixed(1)} EH actieve insuline. Wacht 30-60 min of neem 15g koolhydraten.`;
+    } else if (iob > 0.5) {
+        score -= 15;
     }
     
-    let actionsHTML = '';
-    if (training.type !== 'rest') {
-        actionsHTML = `
-            <div class="training-actions">
-                <button class="btn-primary" id="startTraining">
-                    ${isToday ? 'Start training' : 'Bekijk details'}
-                </button>
-                <button class="btn-secondary" id="rescheduleBtn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                </button>
-            </div>
-        `;
-    }
+    if (glucose >= 6.5 && glucose <= 8.5 && iob < 0.5) score = Math.min(100, score + 10);
     
-    container.innerHTML = `
-        <div class="training-card ${training.type}">
-            <div class="training-type ${training.type}">
-                <span>${training.icon}</span>
-                <span>${training.type === 'cycling' ? 'Fietsen' : training.type === 'strength' ? 'Kracht' : 'Rust'}</span>
-            </div>
-            <h3 class="training-title">${training.title}</h3>
-            <p class="training-description">${training.description}</p>
-            ${training.zone ? `<p class="training-description" style="margin-top: -8px;"><strong>Zone:</strong> ${training.zone}</p>` : ''}
-            ${metaHTML}
-            ${exerciseListHTML}
-            ${actionsHTML}
-        </div>
-    `;
+    let status = score >= 80 ? 'success' : score >= 50 ? 'warning' : 'danger';
+    let title = score >= 80 ? 'Klaar om te trainen! 💪' : score >= 50 ? 'Bijna klaar' : 'Nog niet trainen';
     
-    // Add event listeners
-    const rescheduleBtn = document.getElementById('rescheduleBtn');
-    if (rescheduleBtn) {
-        rescheduleBtn.addEventListener('click', openRescheduleModal);
-    }
+    if (!advice && score >= 80) advice = `Je bloedsuiker is ${glucose} - perfect rond je streefwaarde van ${target}. Je kunt veilig sporten!`;
     
-    const startBtn = document.getElementById('startTraining');
-    if (startBtn) {
-        startBtn.addEventListener('click', () => {
-            showToast('Training gestart! Veel succes! 💪');
-        });
+    return { score: Math.max(0, score), status, title, advice };
+}
+
+function updateReadiness() {
+    const r = calculateReadiness();
+    document.getElementById('readinessScore').textContent = r.score;
+    document.getElementById('readinessTitle').textContent = r.title;
+    document.getElementById('mainAdviceText').textContent = r.advice;
+    document.querySelector('.readiness-circle').style.setProperty('--score', r.score);
+    document.getElementById('mainAdvice').className = `advice-box ${r.status}`;
+}
+
+// ==================== GLUCOSE MANAGEMENT ====================
+
+function updateGlucose() {
+    const input = document.getElementById('glucoseInput');
+    const value = parseFloat(input.value);
+    
+    if (value >= 1 && value <= 30) {
+        if (state.currentGlucose !== null) {
+            const diff = value - state.currentGlucose;
+            state.glucoseTrend = diff > 0.5 ? 'rising' : diff < -0.5 ? 'falling' : 'stable';
+        }
+        
+        state.currentGlucose = value;
+        state.glucoseTime = new Date().toISOString();
+        state.glucoseLogs.push({ time: state.glucoseTime, value, context: 'other' });
+        
+        saveState();
+        renderGlucoseDisplay();
+        updateReadiness();
+        input.value = '';
+        showToast('Glucose bijgewerkt! ✓');
+    } else {
+        showToast('Voer een waarde in tussen 1-30');
     }
 }
 
-// Update glucose display
-function updateGlucoseDisplay() {
-    const valueEl = document.getElementById('glucoseValue');
-    const timeEl = document.getElementById('glucoseTime');
-    const statusEl = document.getElementById('glucoseStatus');
-    const adviceEl = document.getElementById('adviceText');
+function renderGlucoseDisplay() {
+    const valueEl = document.getElementById('currentGlucose');
+    const trendEl = document.getElementById('glucoseTrend');
     
     if (state.currentGlucose !== null) {
         valueEl.textContent = state.currentGlucose.toFixed(1);
+        valueEl.className = 'glucose-value ' + (state.currentGlucose < 5 ? 'low' : state.currentGlucose > 10 ? 'high' : 'ok');
         
-        // Remove all status classes
-        valueEl.classList.remove('low', 'ok', 'high');
-        statusEl.classList.remove('low', 'ok', 'high');
-        
-        let status, statusText, advice;
-        const target = 7.5; // Streefwaarde voor sporten
-        const glucose = state.currentGlucose;
-        
-        if (glucose < 4) {
-            status = 'low';
-            statusText = '⚠️ Te laag - Niet sporten!';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong>, dit is te laag om te sporten. Neem eerst 15-20 gram snelle koolhydraten (bijv. dextro of druivensap) en wacht 15 minuten. Meet opnieuw tot je boven de ${target} zit.`;
-        } else if (glucose < 5) {
-            status = 'low';
-            statusText = '⚠️ Te laag - Eerst eten!';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong>. Dit is te laag voor training. Neem 15-20g koolhydraten en wacht tot je richting ${target} gaat.`;
-        } else if (glucose < 6.5) {
-            status = 'low';
-            statusText = '🍌 Aan de lage kant';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong>. Neem een kleine snack (10-15g koolhydraten) om dichter bij je streefwaarde van ${target} te komen en een hypo te voorkomen.`;
-        } else if (glucose >= 6.5 && glucose <= 8.5) {
-            status = 'ok';
-            statusText = '✅ Perfect - Rond je streefwaarde!';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong> - ideaal rond je streefwaarde van ${target}! Je kunt veilig sporten. Houd glucose tabletten bij de hand voor het geval dat.`;
-        } else if (glucose <= 10) {
-            status = 'ok';
-            statusText = '✅ Goed - Je kunt sporten';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong>. Iets boven je streefwaarde van ${target}, maar prima om te sporten. De training zal je glucose waarschijnlijk laten dalen.`;
-        } else if (glucose <= 14) {
-            status = 'high';
-            statusText = '📊 Hoog - Voorzichtig trainen';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong>, dit is boven je streefwaarde van ${target}. Je kunt trainen, maar check op ketonen bij klachten. Lichte training kan helpen om te dalen.`;
-        } else {
-            status = 'high';
-            statusText = '⚠️ Te hoog - Check ketonen eerst';
-            advice = `Je bloedsuiker is <strong>${glucose} mmol/L</strong>, ver boven je streefwaarde van ${target}. Meet eerst je ketonen. Bij ketonen > 0.6 mmol/L: niet sporten. Intensieve training kan je bloedsuiker verder verhogen.`;
-        }
-        
-        valueEl.classList.add(status);
-        statusEl.classList.add(status);
-        statusEl.innerHTML = `<span>${statusText}</span>`;
-        adviceEl.innerHTML = advice;
-        
-        if (state.glucoseTime) {
-            const time = new Date(state.glucoseTime);
-            timeEl.textContent = `Gemeten om ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-        }
+        trendEl.className = 'glucose-trend ' + state.glucoseTrend;
+        trendEl.innerHTML = state.glucoseTrend === 'rising' ? '<span>↗</span> Stijgend' : 
+                           state.glucoseTrend === 'falling' ? '<span>↘</span> Dalend' : '<span>→</span> Stabiel';
     }
 }
 
-// Setup event listeners
-function setupEventListeners() {
-    // Glucose input
-    document.getElementById('updateGlucose').addEventListener('click', () => {
-        const input = document.getElementById('glucoseInput');
-        const value = parseFloat(input.value);
-        
-        if (value && value >= 1 && value <= 30) {
-            state.currentGlucose = value;
-            state.glucoseTime = new Date().toISOString();
-            saveState();
-            updateGlucoseDisplay();
-            input.value = '';
-            showToast('Bloedsuiker bijgewerkt! ✓');
-        } else {
-            showToast('Voer een geldige waarde in (1-30)');
-        }
-    });
+// ==================== LOGGING FUNCTIONS ====================
+
+function logInsulin() {
+    const amount = parseFloat(document.getElementById('insulinAmount').value);
+    const type = document.getElementById('insulinType').value;
     
-    // Enter key for glucose input
-    document.getElementById('glucoseInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('updateGlucose').click();
-        }
-    });
-    
-    // Navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const view = item.dataset.view;
-            
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            
-            const mainContent = document.getElementById('mainContent');
-            const settingsPanel = document.getElementById('settingsPanel');
-            
-            if (view === 'settings') {
-                mainContent.classList.add('hidden');
-                settingsPanel.classList.add('active');
-            } else {
-                mainContent.classList.remove('hidden');
-                settingsPanel.classList.remove('active');
-            }
-        });
-    });
-    
-    // Settings button
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-        document.querySelector('[data-view="settings"]').click();
-    });
-    
-    // Notification toggle
-    document.getElementById('toggleNotifications').addEventListener('click', function() {
-        this.classList.toggle('active');
-        state.notificationsEnabled = this.classList.contains('active');
+    if (amount > 0) {
+        state.insulinLogs.push({ time: new Date().toISOString(), amount, type });
         saveState();
-        
-        if (state.notificationsEnabled) {
-            requestNotificationPermission();
-            showToast('Notificaties ingeschakeld');
-        } else {
-            showToast('Notificaties uitgeschakeld');
-        }
-    });
-    
-    // Reschedule modal
-    document.getElementById('cancelReschedule').addEventListener('click', closeRescheduleModal);
-    document.getElementById('rescheduleModal').addEventListener('click', (e) => {
-        if (e.target.id === 'rescheduleModal') {
-            closeRescheduleModal();
-        }
-    });
-    
-    document.getElementById('confirmReschedule').addEventListener('click', confirmReschedule);
-    
-    // Notification button
-    document.getElementById('notificationBtn').addEventListener('click', () => {
-        showToast('Geen nieuwe notificaties');
-    });
+        updateIOBDisplay();
+        closeModal('insulinModal');
+        showToast(`${amount} EH ${type} gelogd ✓`);
+        document.getElementById('insulinAmount').value = '';
+        renderLogs();
+    }
 }
 
-// Reschedule Modal
-let selectedRescheduleDay = null;
-
-function openRescheduleModal() {
-    const modal = document.getElementById('rescheduleModal');
-    const optionsContainer = document.getElementById('rescheduleOptions');
-    const today = new Date().getDay();
+function logCarbs() {
+    const amount = parseInt(document.getElementById('carbsAmount').value);
+    const type = document.getElementById('carbsType').value;
     
-    // Find available days (rest days or days without intense training)
-    const availableDays = [];
-    for (let i = 0; i < 7; i++) {
-        if (i === state.selectedDay) continue; // Skip current day
-        if (i === 0) continue; // Skip Sunday (no training)
-        
-        const training = getTrainingForDay(i);
-        // Suggest rest days or Friday (light day)
-        if (training.type === 'rest' || i === 5) {
-            const date = new Date();
-            date.setDate(date.getDate() - today + i);
-            availableDays.push({
-                dayIndex: i,
-                dayName: dayNamesFull[i],
-                date: date.getDate(),
-                current: training.title
+    if (amount > 0) {
+        state.carbLogs.push({ time: new Date().toISOString(), amount, type });
+        saveState();
+        updateIOBDisplay();
+        closeModal('carbsModal');
+        showToast(`${amount}g koolhydraten gelogd ✓`);
+        document.getElementById('carbsAmount').value = '';
+        renderLogs();
+    }
+}
+
+function logMeal() {
+    const desc = document.getElementById('mealDesc').value;
+    const carbs = parseInt(document.getElementById('mealCarbs').value);
+    const insulin = parseFloat(document.getElementById('mealInsulin').value) || 0;
+    
+    if (desc && carbs > 0) {
+        state.mealLogs.push({ time: new Date().toISOString(), description: desc, carbs, insulin });
+        saveState();
+        updateIOBDisplay();
+        closeModal('mealModal');
+        showToast(`Maaltijd gelogd: ${desc} ✓`);
+        document.getElementById('mealDesc').value = '';
+        document.getElementById('mealCarbs').value = '';
+        document.getElementById('mealInsulin').value = '';
+        renderLogs();
+    }
+}
+
+// ==================== WORKOUT FUNCTIONS ====================
+
+function startWorkout() {
+    const readiness = calculateReadiness();
+    if (readiness.score < 50) {
+        showToast('⚠️ Check eerst de adviezen!');
+        return;
+    }
+    
+    state.activeWorkout = {
+        startTime: new Date().toISOString(),
+        glucosePre: state.currentGlucose,
+        type: trainingSchedule[new Date().getDay()].type
+    };
+    saveState();
+    showToast('Training gestart! 💪');
+    
+    // Show post-workout modal after demo time
+    setTimeout(endWorkout, 3000);
+}
+
+function endWorkout() {
+    if (!state.activeWorkout) return;
+    
+    state.workoutLogs.push({
+        date: state.activeWorkout.startTime,
+        type: state.activeWorkout.type,
+        duration: trainingSchedule[new Date().getDay()].duration,
+        glucosePre: state.activeWorkout.glucosePre,
+        glucosePost: state.currentGlucose,
+        hypo: state.currentGlucose && state.currentGlucose < 4
+    });
+    
+    state.activeWorkout = null;
+    updateAchievements();
+    saveState();
+    openModal('postWorkoutModal');
+    updatePostWorkoutSuggestions();
+}
+
+function updatePostWorkoutSuggestions() {
+    const el = document.getElementById('postWorkoutCarbSuggestion');
+    if (state.currentGlucose && state.currentGlucose < 8) {
+        el.style.display = 'flex';
+        document.getElementById('suggestedCarbs').textContent = Math.round((8 - state.currentGlucose) * 5 + 15);
+    } else {
+        el.style.display = 'none';
+    }
+}
+
+// ==================== CARB CALCULATOR ====================
+
+function calculateCarbs() {
+    const glucose = parseFloat(document.getElementById('calcCurrentGlucose').value) || state.currentGlucose;
+    const duration = parseInt(document.getElementById('calcDuration').value);
+    const intensity = document.getElementById('calcIntensity').value;
+    
+    if (!glucose) { showToast('Voer je huidige glucose in'); return; }
+    
+    const target = state.settings.targetGlucose;
+    let carbsNeeded = glucose < target ? (target - glucose) * 10 : 0;
+    
+    const carbsPerHour = { low: 20, medium: 40, high: 60 };
+    const exerciseCarbs = (duration / 60) * carbsPerHour[intensity];
+    const iobEffect = calculateIOB() * state.settings.correctionFactor * 10;
+    
+    let total = Math.max(0, Math.round((carbsNeeded + exerciseCarbs - calculateCOB() + iobEffect) / 5) * 5);
+    
+    document.getElementById('carbCalcResult').style.display = 'flex';
+    document.getElementById('calcResultCarbs').textContent = total;
+}
+
+// ==================== PATTERN RECOGNITION ====================
+
+function analyzePatterns() {
+    const patterns = [];
+    if (state.workoutLogs.length < 4) return patterns;
+    
+    const eveningWorkouts = state.workoutLogs.filter(w => {
+        const hour = new Date(w.date).getHours();
+        return hour >= 18 && hour <= 22 && w.glucosePre && w.glucosePost;
+    });
+    
+    if (eveningWorkouts.length >= 3) {
+        const avgDrop = eveningWorkouts.reduce((sum, w) => sum + (w.glucosePre - w.glucosePost), 0) / eveningWorkouts.length;
+        if (avgDrop > 2) {
+            patterns.push({
+                icon: '📉',
+                title: 'Avondtraining glucosedaling',
+                text: `Bij avondtraining daalt je glucose gemiddeld ${avgDrop.toFixed(1)} mmol/L. Start iets hoger.`
             });
         }
     }
     
-    // Also suggest tomorrow if it's not Sunday
-    const tomorrow = (today + 1) % 7;
-    if (tomorrow !== 0 && !availableDays.find(d => d.dayIndex === tomorrow)) {
-        const date = new Date();
-        date.setDate(date.getDate() + 1);
-        const training = getTrainingForDay(tomorrow);
-        availableDays.unshift({
-            dayIndex: tomorrow,
-            dayName: dayNamesFull[tomorrow],
-            date: date.getDate(),
-            current: training.title
+    const hypoRate = (state.workoutLogs.filter(w => w.hypo).length / state.workoutLogs.length) * 100;
+    if (hypoRate > 20) {
+        patterns.push({
+            icon: '⚠️',
+            title: 'Hypo risico',
+            text: `${hypoRate.toFixed(0)}% van je trainingen had een hypo. Overweeg meer koolhydraten vooraf.`
         });
     }
     
-    optionsContainer.innerHTML = availableDays.slice(0, 4).map(day => `
-        <div class="reschedule-option" data-day="${day.dayIndex}">
-            <div class="option-day">${day.dayName} ${day.date}</div>
-            <div class="option-info">Nu: ${day.current}</div>
+    return patterns;
+}
+
+// ==================== ACHIEVEMENTS ====================
+
+function updateAchievements() {
+    const count = state.workoutLogs.length;
+    if (count >= 1) state.achievements.firstWorkout = true;
+    if (count >= 5) state.achievements.fiveWorkouts = true;
+    if (count >= 10) state.achievements.tenWorkouts = true;
+    
+    let streak = 0;
+    for (let i = state.workoutLogs.length - 1; i >= 0; i--) {
+        if (!state.workoutLogs[i].hypo) streak++; else break;
+    }
+    state.achievements.noHypoStreak = streak;
+    saveState();
+}
+
+// ==================== RENDERING ====================
+
+function renderAll() {
+    renderGlucoseDisplay();
+    renderTodayTraining();
+    renderWeekBar();
+    renderSelectedDayTraining();
+    renderPreWorkoutChecklist();
+    renderLogs();
+    renderStats();
+    renderAchievements();
+    renderPatterns();
+    loadSettings();
+}
+
+function renderTodayTraining() {
+    const t = trainingSchedule[new Date().getDay()];
+    document.getElementById('todayTraining').innerHTML = `
+        <div class="card-header"><span class="card-title">Training Vandaag</span><span class="card-icon">${t.icon}</span></div>
+        <div class="training-type-badge ${t.type}">${t.icon} ${t.type}</div>
+        <div class="training-title">${t.title}</div>
+        <div class="training-desc">${t.description}</div>
+        ${t.duration > 0 ? `<div class="training-meta"><span class="meta-item">⏱️ ${t.duration} min</span>${t.zone ? `<span class="meta-item">📊 ${t.zone}</span>` : ''}</div>` : ''}
+        ${t.route ? `<div class="advice-box success"><div class="advice-title">🗺️ Aanbevolen route</div><div class="advice-text">${t.route}</div></div>` : ''}
+    `;
+}
+
+function renderWeekBar() {
+    const today = new Date().getDay();
+    document.getElementById('weekBar').innerHTML = [0,1,2,3,4,5,6].map(day => {
+        const t = trainingSchedule[day];
+        const date = new Date(); date.setDate(date.getDate() - today + day);
+        return `<div class="week-day ${day === state.selectedDay ? 'active' : ''} ${day === today ? 'today' : ''}" onclick="selectDay(${day})">
+            <div class="week-day-name">${dayNames[day]}</div>
+            <div class="week-day-num">${date.getDate()}</div>
+            <div class="week-day-icon">${t.icon}</div>
+        </div>`;
+    }).join('');
+}
+
+function selectDay(day) {
+    state.selectedDay = day;
+    renderWeekBar();
+    renderSelectedDayTraining();
+}
+
+function renderSelectedDayTraining() {
+    const t = trainingSchedule[state.selectedDay];
+    const exercises = t.exercises ? `<div class="exercise-list">${t.exercises.map(e => 
+        `<div class="exercise-item"><span class="exercise-name">${e.name}</span><span class="exercise-reps">${e.reps}</span></div>`
+    ).join('')}</div>` : '';
+    
+    document.getElementById('selectedDayTraining').innerHTML = `
+        <div class="card training-card">
+            <div class="training-type-badge ${t.type}">${t.icon} ${t.type}</div>
+            <div class="training-title">${t.title}</div>
+            <div class="training-desc">${t.description}</div>
+            ${t.duration > 0 ? `<div class="training-meta"><span class="meta-item">⏱️ ${t.duration} min</span>${t.intensity !== 'none' ? `<span class="meta-item">⚡ ${t.intensity}</span>` : ''}</div>` : ''}
+            ${exercises}
+            ${t.route ? `<div class="advice-box success" style="margin-top:16px"><div class="advice-title">🗺️ Aanbevolen Zwift route</div><div class="advice-text">${t.route}</div></div>` : ''}
         </div>
-    `).join('');
-    
-    // Add click handlers
-    optionsContainer.querySelectorAll('.reschedule-option').forEach(option => {
-        option.addEventListener('click', () => {
-            optionsContainer.querySelectorAll('.reschedule-option').forEach(o => o.classList.remove('selected'));
-            option.classList.add('selected');
-            selectedRescheduleDay = parseInt(option.dataset.day);
-        });
-    });
-    
-    selectedRescheduleDay = null;
-    modal.classList.add('active');
+    `;
 }
 
-function closeRescheduleModal() {
-    document.getElementById('rescheduleModal').classList.remove('active');
-    selectedRescheduleDay = null;
+function renderPreWorkoutChecklist() {
+    const iob = calculateIOB();
+    const g = state.currentGlucose;
+    const target = state.settings.targetGlucose;
+    
+    const items = [
+        { text: 'Glucose gemeten', checked: g !== null },
+        { text: `Glucose boven ${target - 1} mmol/L`, checked: g && g >= target - 1 },
+        { text: 'Actieve insuline < 1 EH', checked: iob < 1 },
+        { text: 'Glucose tabletten bij de hand', checked: false },
+        { text: 'Water klaar', checked: false }
+    ];
+    
+    document.getElementById('checklistItems').innerHTML = items.map((item, i) => 
+        `<div class="checklist-item ${item.checked ? 'checked' : ''}" onclick="toggleCheckItem(this)">
+            <div class="checklist-checkbox">${item.checked ? '✓' : ''}</div>
+            <span class="checklist-text">${item.text}</span>
+        </div>`
+    ).join('');
 }
 
-function confirmReschedule() {
-    if (selectedRescheduleDay === null) {
-        showToast('Selecteer eerst een dag');
+function toggleCheckItem(el) {
+    el.classList.toggle('checked');
+    el.querySelector('.checklist-checkbox').textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+function renderLogs() {
+    const today = new Date().toDateString();
+    const allLogs = [
+        ...state.insulinLogs.map(l => ({ ...l, logType: 'insulin' })),
+        ...state.carbLogs.map(l => ({ ...l, logType: 'carbs' })),
+        ...state.mealLogs.map(l => ({ ...l, logType: 'meal' })),
+        ...state.glucoseLogs.map(l => ({ ...l, logType: 'glucose' }))
+    ].filter(l => new Date(l.time).toDateString() === today)
+     .sort((a, b) => new Date(b.time) - new Date(a.time));
+    
+    const container = document.getElementById('todayLogs');
+    if (allLogs.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);font-size:14px;">Nog geen logs vandaag.</p>';
         return;
     }
     
-    // Save the reschedule
-    state.rescheduledTrainings[state.selectedDay] = selectedRescheduleDay;
-    saveState();
-    
-    // Update UI
-    renderDaySelector();
-    renderWeekGrid();
-    renderTrainingCard();
-    closeRescheduleModal();
-    
-    showToast(`Training verplaatst naar ${dayNamesFull[selectedRescheduleDay]}`);
+    container.innerHTML = allLogs.map(log => {
+        const time = new Date(log.time);
+        const timeStr = `${time.getHours().toString().padStart(2,'0')}:${time.getMinutes().toString().padStart(2,'0')}`;
+        let content = '', label = '';
+        
+        if (log.logType === 'insulin') { label = 'Insuline'; content = `<span class="log-value">${log.amount} EH</span> ${log.type}`; }
+        else if (log.logType === 'carbs') { label = 'Koolhydraten'; content = `<span class="log-value">${log.amount}g</span> ${log.type}`; }
+        else if (log.logType === 'meal') { label = 'Maaltijd'; content = `${log.description}: <span class="log-value">${log.carbs}g</span>, <span class="log-value">${log.insulin} EH</span>`; }
+        else if (log.logType === 'glucose') { label = 'Glucose'; content = `<span class="log-value">${log.value} mmol/L</span>`; }
+        
+        return `<div class="log-entry"><div class="log-header"><span class="log-time">${timeStr}</span><span class="log-type ${log.logType}">${label}</span></div><div class="log-content">${content}</div></div>`;
+    }).join('');
 }
 
-// Toast notification
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.classList.add('show');
+function renderStats() {
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    const thisWeek = state.workoutLogs.filter(w => new Date(w.date) > weekAgo);
     
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-// Notification handling
-function requestNotificationPermission() {
-    if ('Notification' in window && state.notificationsEnabled) {
-        Notification.requestPermission();
+    document.getElementById('statWorkouts').textContent = thisWeek.length;
+    document.getElementById('statHypos').textContent = thisWeek.filter(w => w.hypo).length;
+    
+    const glucoseValues = thisWeek.filter(w => w.glucosePre).map(w => w.glucosePre);
+    if (glucoseValues.length > 0) {
+        document.getElementById('statAvgGlucose').textContent = (glucoseValues.reduce((a,b) => a+b, 0) / glucoseValues.length).toFixed(1);
+    }
+    
+    const inRange = state.glucoseLogs.filter(g => g.value >= 4 && g.value <= 10).length;
+    if (state.glucoseLogs.length > 0) {
+        document.getElementById('statTimeInRange').textContent = Math.round((inRange / state.glucoseLogs.length) * 100) + '%';
     }
 }
 
-function scheduleNotifications() {
-    if (!('Notification' in window) || !state.notificationsEnabled) return;
+function renderAchievements() {
+    const achievements = [];
+    if (state.achievements.firstWorkout) achievements.push({ icon: '🎯', title: 'Eerste Training', desc: 'Je bent begonnen!' });
+    if (state.achievements.fiveWorkouts) achievements.push({ icon: '🔥', title: '5 Trainingen', desc: 'Je bouwt een routine!' });
+    if (state.achievements.tenWorkouts) achievements.push({ icon: '💪', title: '10 Trainingen', desc: 'Doorzetter!' });
+    if (state.achievements.noHypoStreak >= 3) achievements.push({ icon: '🛡️', title: `${state.achievements.noHypoStreak}x Geen Hypo`, desc: 'Stabiel sporten!' });
     
-    // Check every minute for scheduled notifications
-    setInterval(() => {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        
-        // Training reminder at 19:45
-        if (hours === 19 && minutes === 45) {
-            const today = now.getDay();
-            const training = getTrainingForDay(today);
-            
-            if (training.type !== 'rest' && Notification.permission === 'granted') {
-                new Notification('DiabeFit - Trainingsherinnering', {
-                    body: `Over 15 minuten: ${training.title}. Vergeet niet je bloedsuiker te meten!`,
-                    icon: '/icon-192.png',
-                    badge: '/icon-192.png'
-                });
-            }
-        }
-    }, 60000);
+    const el = document.getElementById('achievements');
+    el.innerHTML = achievements.length === 0 
+        ? '<p style="color:var(--text-secondary);font-size:14px;">Voltooi je eerste training om achievements te verdienen!</p>'
+        : achievements.map(a => `<div class="achievement"><div class="achievement-icon">${a.icon}</div><div class="achievement-info"><h4>${a.title}</h4><p>${a.desc}</p></div></div>`).join('');
 }
 
-// Service Worker Registration
+function renderPatterns() {
+    const patterns = analyzePatterns();
+    const el = document.getElementById('patterns');
+    el.innerHTML = patterns.length === 0 
+        ? '<p style="color:var(--text-secondary);font-size:14px;">Na een paar trainingen verschijnen hier persoonlijke inzichten...</p>'
+        : patterns.map(p => `<div class="advice-box" style="margin-bottom:12px"><div class="advice-title">${p.icon} ${p.title}</div><div class="advice-text">${p.text}</div></div>`).join('');
+}
+
+// ==================== SETTINGS ====================
+
+function loadSettings() {
+    document.getElementById('targetGlucose').value = state.settings.targetGlucose;
+    document.getElementById('insulinDuration').value = state.settings.insulinDuration;
+    document.getElementById('correctionFactor').value = state.settings.correctionFactor;
+    document.getElementById('carbRatio').value = state.settings.carbRatio;
+    document.getElementById('kidsBedtime').value = state.settings.kidsBedtime;
+    document.getElementById('workoutTime').value = state.settings.workoutTime;
+    
+    document.getElementById('toggleReminders').classList.toggle('active', state.settings.notifications.reminders);
+    document.getElementById('togglePostWorkout').classList.toggle('active', state.settings.notifications.postWorkout);
+    document.getElementById('toggleNightCheck').classList.toggle('active', state.settings.notifications.nightCheck);
+    
+    updateDexcomStatus();
+}
+
+function saveSettings() {
+    state.settings.targetGlucose = parseFloat(document.getElementById('targetGlucose').value);
+    state.settings.insulinDuration = parseFloat(document.getElementById('insulinDuration').value);
+    state.settings.correctionFactor = parseFloat(document.getElementById('correctionFactor').value);
+    state.settings.carbRatio = parseInt(document.getElementById('carbRatio').value);
+    state.settings.kidsBedtime = document.getElementById('kidsBedtime').value;
+    state.settings.workoutTime = document.getElementById('workoutTime').value;
+    saveState();
+    showToast('Instellingen opgeslagen ✓');
+}
+
+function toggleSetting(el) {
+    el.classList.toggle('active');
+    const id = el.id;
+    if (id === 'toggleReminders') state.settings.notifications.reminders = el.classList.contains('active');
+    if (id === 'togglePostWorkout') state.settings.notifications.postWorkout = el.classList.contains('active');
+    if (id === 'toggleNightCheck') state.settings.notifications.nightCheck = el.classList.contains('active');
+    saveState();
+}
+
+function saveWellbeing() {
+    state.wellbeingLogs.push({
+        date: new Date().toISOString(),
+        stress: parseInt(document.getElementById('stressSlider').value),
+        sleep: parseInt(document.getElementById('sleepSlider').value)
+    });
+    saveState();
+    renderPatterns();
+    showToast('Welzijn opgeslagen ✓');
+}
+
+// ==================== DEXCOM ====================
+
+function connectDexcom() {
+    const username = document.getElementById('dexcomUsername').value;
+    const password = document.getElementById('dexcomPassword').value;
+    
+    if (!username || !password) { showToast('Vul gebruikersnaam en wachtwoord in'); return; }
+    
+    state.dexcomConnected = true;
+    saveState();
+    updateDexcomStatus();
+    showToast('Dexcom verbonden! ✓');
+}
+
+function updateDexcomStatus() {
+    const dot = document.getElementById('dexcomStatus');
+    const text = document.getElementById('dexcomStatusText');
+    dot.className = 'status-dot ' + (state.dexcomConnected ? 'connected' : 'disconnected');
+    text.textContent = state.dexcomConnected ? 'Verbonden' : 'Niet verbonden';
+}
+
+// ==================== UI HELPERS ====================
+
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (pageId === 'stats') { renderStats(); renderAchievements(); renderPatterns(); }
+}
+
+function openSettings() {
+    showPage('settings');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    if (id === 'carbCalcModal' && state.currentGlucose) {
+        document.getElementById('calcCurrentGlucose').value = state.currentGlucose;
+    }
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function toggleCheck(el) {
+    el.classList.toggle('checked');
+    el.querySelector('.checklist-checkbox').textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function setupEventListeners() {
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+    });
+    document.getElementById('glucoseInput').addEventListener('keypress', e => { if (e.key === 'Enter') updateGlucose(); });
+}
+
+// ==================== SERVICE WORKER ====================
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker registered'))
-            .catch(err => console.log('Service Worker registration failed:', err));
+        navigator.serviceWorker.register('sw.js').catch(e => console.log('SW failed:', e));
     });
 }
 
-// Initialize app when DOM is ready
+// ==================== INIT ====================
+
 document.addEventListener('DOMContentLoaded', init);

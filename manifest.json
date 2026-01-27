@@ -1,27 +1,27 @@
 {
-  "name": "DiabeFit - Training voor Diabetes",
-  "short_name": "DiabeFit",
-  "description": "Persoonlijke trainingsapp voor Type 1 Diabetes met bloedsuiker-advies",
-  "start_url": "/Diabefit/",
-  "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
-  "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "/Diabefit/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/Diabefit/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "categories": ["health", "fitness", "medical"],
-  "lang": "nl",
-  "scope": "/Diabefit/"
+    "name": "DiabeFit Pro - Diabetes Sport Management",
+    "short_name": "DiabeFit Pro",
+    "description": "Complete trainingsapp voor Type 1 Diabetes met IOB calculator, bloedsuiker tracking, en persoonlijke inzichten",
+    "start_url": "/Diabefit/",
+    "display": "standalone",
+    "background_color": "#0a0a0f",
+    "theme_color": "#0a0a0f",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/Diabefit/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/Diabefit/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["health", "fitness", "medical"],
+    "lang": "nl",
+    "scope": "/Diabefit/"
 }
